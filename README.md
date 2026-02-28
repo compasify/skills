@@ -18,54 +18,54 @@ Skills work with any AI coding assistant that supports the [Agent Skills](https:
 
 | Skill | Description |
 |-------|-------------|
-| [confluence-dc](./skills/confluence-dc/) | Manage Confluence Data Center pages/blogs with safety guards, MCP integration, and API fallback *(submodule → [compasify/confluence-skill](https://github.com/compasify/confluence-skill))* |
+| [confluence-dc](./skills/confluence-dc/) | Manage Confluence Data Center pages/blogs with safety guards, MCP integration, and API fallback *(synced from [compasify/confluence-skill](https://github.com/compasify/confluence-skill))* |
 
 ## Cloning
 
-This repo uses **git submodules** for some skills. Clone with:
-
 ```bash
-git clone --recurse-submodules https://github.com/compasify/skills.git
+git clone https://github.com/compasify/skills.git
 ```
 
-Or if already cloned:
-
-```bash
-git submodule update --init --recursive
-```
+> **For maintainers:** Some skills are managed via `git subtree`. See [Contributing](#contributing) for sync commands.
 
 ## Installation
-### Claude Code (Recommended)
 
-Register this repository as a plugin marketplace:
+### skills.sh (Recommended)
+
+Install via the [skills.sh](https://skills.sh) CLI — works with Claude Code, Cursor, OpenCode, Windsurf, Cline/Roo, AMP, Codex, and [more](https://skills.sh):
+
+```bash
+# Install confluence-dc from this monorepo
+npx skills add compasify/skills --skill confluence-dc
+
+# Or install from the standalone repo
+npx skills add compasify/confluence-skill
+
+# Install to a specific agent only
+npx skills add compasify/skills --skill confluence-dc -a claude-code
+
+# Install globally (user-level, all projects)
+npx skills add compasify/skills --skill confluence-dc -g
+```
+
+### Claude Code Plugin Marketplace
 
 ```
 /plugin marketplace add compasify/skills
-```
-
-Install the skill:
-
-```
 /plugin install confluence-dc@compasify-skills
 ```
 
-### OpenCode
+### Manual Copy
 
-Copy the skill to your OpenCode skills directory:
+Clone this repo and copy the skill folder to your agent's skills directory:
 
 ```bash
-# Project-level
+# OpenCode (project-level)
 cp -r skills/confluence-dc .opencode/skills/
 
-# Or user-level (all projects)
+# OpenCode (user-level, all projects)
 cp -r skills/confluence-dc ~/.config/opencode/skills/
-```
 
-### Manual (Any Agent)
-
-Copy the desired skill folder to your agent's skills directory:
-
-```bash
 # Claude Code
 cp -r skills/confluence-dc ~/.claude/skills/
 
@@ -110,6 +110,18 @@ Contributions welcome! Please:
 2. Create a skill in `skills/your-skill-name/`
 3. Include a `SKILL.md` with proper frontmatter
 4. Submit a pull request
+
+### Subtree-Managed Skills
+
+Some skills (e.g. `confluence-dc`) are synced from standalone repos via `git subtree`.
+
+```bash
+# Pull latest changes from upstream
+git subtree pull --prefix=skills/confluence-dc https://github.com/compasify/confluence-skill.git main --squash
+
+# Push local changes back to upstream
+git subtree push --prefix=skills/confluence-dc https://github.com/compasify/confluence-skill.git main
+```
 
 ## License
 
