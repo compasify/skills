@@ -1,0 +1,29 @@
+{
+  "name": "compasify-skills",
+  "owner": {
+    "name": "Compasify",
+    "email": "hien.bt@htsc.vn"
+  },
+  "metadata": {
+    "description": "Enterprise AI agent skills for Atlassian, DevOps, and productivity workflows",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "confluence-dc",
+      "description": "Manage Confluence Data Center pages/blogs with safety guards, MCP integration, and direct API fallback for large content",
+      "source": "./",
+      "strict": false,
+      "version": "1.0.0",
+      "author": {
+        "name": "Compasify"
+      },
+      "license": "MIT",
+      "keywords": ["confluence", "atlassian", "mcp", "enterprise", "knowledge-base"],
+      "category": "productivity",
+      "skills": [
+        "./skills/confluence-dc"
+      ]
+    }
+  ]
+}
