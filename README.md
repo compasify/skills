@@ -18,10 +18,23 @@ Skills work with any AI coding assistant that supports the [Agent Skills](https:
 
 | Skill | Description |
 |-------|-------------|
-| [confluence-dc](./skills/confluence-dc/) | Manage Confluence Data Center pages/blogs with safety guards, MCP integration, and API fallback |
+| [confluence-dc](./skills/confluence-dc/) | Manage Confluence Data Center pages/blogs with safety guards, MCP integration, and API fallback *(submodule → [compasify/confluence-skill](https://github.com/compasify/confluence-skill))* |
+
+## Cloning
+
+This repo uses **git submodules** for some skills. Clone with:
+
+```bash
+git clone --recurse-submodules https://github.com/compasify/skills.git
+```
+
+Or if already cloned:
+
+```bash
+git submodule update --init --recursive
+```
 
 ## Installation
-
 ### Claude Code (Recommended)
 
 Register this repository as a plugin marketplace:
