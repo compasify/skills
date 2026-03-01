@@ -34,7 +34,7 @@ Use REST API instead:
 # mcp__compasify-confluence-dc__confluence_update_page
 
 # ✅ Use REST API via upload script
-python3 ~/.claude/skills/confluence/scripts/upload_confluence_v2.py \
+python3 ~/.claude/skills/confluence-dc/scripts/upload_confluence_v2.py \
     document.md --id 780369923
 ```
 
@@ -108,7 +108,7 @@ Use the improved `upload_confluence_v2.py` script:
 
 ```bash
 # ✅ Use v2 script with better error handling
-python3 ~/.claude/skills/confluence/scripts/upload_confluence_v2.py \
+python3 ~/.claude/skills/confluence-dc/scripts/upload_confluence_v2.py \
     document.md --id 780369923
 ```
 
@@ -386,7 +386,7 @@ ls -lh ./diagrams/architecture.png
 ```bash
 # Run upload script from same directory as markdown file
 cd /path/to/markdown/directory
-python3 ~/.claude/skills/confluence/scripts/upload_confluence_v2.py document.md --id 123
+python3 ~/.claude/skills/confluence-dc/scripts/upload_confluence_v2.py document.md --id 123
 ```
 
 ---

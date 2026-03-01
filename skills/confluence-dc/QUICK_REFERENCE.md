@@ -14,6 +14,12 @@
 "Create a page titled 'API Guide' under 'Documentation' parent"
 ```
 
+### Create Blogpost
+```
+"Create a Confluence blogpost from this Markdown in the DEV space"
+"Write a blogpost titled 'Release Notes v2.0' in DEV space"
+```
+
 ### Update Page
 ```
 "Update the 'Getting Started' page with this content"
@@ -76,11 +82,17 @@ label = "api"
 ## Python Scripts
 
 ```bash
-# Convert Markdown → Wiki
+# Convert Markdown -> Wiki
 python scripts/convert_markdown_to_wiki.py input.md output.wiki
 
 # Render Mermaid diagram
 python scripts/render_mermaid.py diagram.mmd output.png
+
+# Upload as page (default)
+python scripts/upload_confluence_v2.py document.md --id PAGE_ID
+
+# Upload as blogpost
+python scripts/upload_confluence_v2.py document.md --space ARCP --type blogpost
 ```
 
 ## Available MCP Tools
@@ -98,11 +110,11 @@ python scripts/render_mermaid.py diagram.mmd output.png
 
 ## File Locations
 
-- **Main documentation**: `~/.claude/skills/confluence/SKILL.md`
-- **Wiki Markup guide**: `~/.claude/skills/confluence/references/wiki_markup_guide.md`
-- **Conversion guide**: `~/.claude/skills/confluence/references/conversion_guide.md`
-- **Scripts**: `~/.claude/skills/confluence/scripts/`
-- **Examples**: `~/.claude/skills/confluence/examples/`
+- **Main documentation**: `~/.claude/skills/confluence-dc/SKILL.md`
+- **Wiki Markup guide**: `~/.claude/skills/confluence-dc/references/wiki_markup_guide.md`
+- **Conversion guide**: `~/.claude/skills/confluence-dc/references/conversion_guide.md`
+- **Scripts**: `~/.claude/skills/confluence-dc/scripts/`
+- **Examples**: `~/.claude/skills/confluence-dc/examples/`
 
 ## Common Workflows
 

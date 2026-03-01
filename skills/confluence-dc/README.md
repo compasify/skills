@@ -62,7 +62,7 @@ This skill can be installed at multiple levels depending on your organizational 
 Install in your home directory for use across all projects:
 
 ```bash
-~/.claude/skills/confluence/
+~/.claude/skills/confluence-dc/
 ```
 
 **Use case**: You work with a single Confluence instance across all projects.
@@ -72,7 +72,7 @@ Install in your home directory for use across all projects:
 Install within a specific project directory:
 
 ```bash
-/path/to/project/.claude/skills/confluence/
+/path/to/project/.claude/skills/confluence-dc/
 ```
 
 **Use case**: Project-specific Confluence configuration, custom templates, or documentation workflows that differ from other projects.
@@ -82,8 +82,8 @@ Install within a specific project directory:
 Install at a workspace directory that groups multiple related projects:
 
 ```bash
-~/workspace/acme-corp/.claude/skills/confluence/
-~/workspace/tech-startup/.claude/skills/confluence/
+~/workspace/acme-corp/.claude/skills/confluence-dc/
+~/workspace/tech-startup/.claude/skills/confluence-dc/
 ```
 
 **Use case**:
@@ -277,17 +277,17 @@ The skill includes an upload script (`scripts/upload_confluence.py`) that conver
 
 **Smart upload (reads metadata from frontmatter):**
 ```bash
-python3 ~/.claude/skills/confluence/scripts/upload_confluence.py page.md
+python3 ~/.claude/skills/confluence-dc/scripts/upload_confluence.py page.md
 ```
 
 **Update specific page by ID:**
 ```bash
-python3 ~/.claude/skills/confluence/scripts/upload_confluence.py page.md --id 450855912
+python3 ~/.claude/skills/confluence-dc/scripts/upload_confluence.py page.md --id 450855912
 ```
 
 **Create new page in a space:**
 ```bash
-python3 ~/.claude/skills/confluence/scripts/upload_confluence.py page.md --space ARCP --parent-id 123456
+python3 ~/.claude/skills/confluence-dc/scripts/upload_confluence.py page.md --space ARCP --parent-id 123456
 ```
 
 ### Download, Edit, Upload Workflow
@@ -296,13 +296,13 @@ The most powerful feature is the workflow for updating existing pages:
 
 ```bash
 # 1. Download a page (gets frontmatter with all metadata)
-python3 ~/.claude/skills/confluence/scripts/download_confluence.py 450855912
+python3 ~/.claude/skills/confluence-dc/scripts/download_confluence.py 450855912
 
 # 2. Edit the markdown file locally
 vim Data_Source_Registry_Manager_API.md
 
 # 3. Upload changes (reads everything from frontmatter)
-python3 ~/.claude/skills/confluence/scripts/upload_confluence.py Data_Source_Registry_Manager_API.md
+python3 ~/.claude/skills/confluence-dc/scripts/upload_confluence.py Data_Source_Registry_Manager_API.md
 ```
 
 ### Mermaid Diagram Support
@@ -376,7 +376,7 @@ CONFLUENCE_API_TOKEN=your_personal_access_token_here
 ## File Structure
 
 ```
-~/.claude/skills/confluence/
+~/.claude/skills/confluence-dc/
 ├── CLAUDE.md                         # Architecture guide for Claude Code
 ├── README.md                         # This file
 ├── SKILL.md                          # Detailed skill documentation

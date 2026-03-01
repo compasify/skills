@@ -1,6 +1,6 @@
 ---
-name: confluence
-description: Manage Confluence Data Center documentation with downloads, uploads, conversions, and diagrams. Use when asked to "download Confluence pages", "upload to Confluence", "convert Wiki Markup", "create Confluence page", or "handle Confluence images".
+name: confluence-dc
+description: Manage Confluence Data Center documentation with downloads, uploads, conversions, and diagrams. Use when asked to "download Confluence pages", "upload to Confluence", "convert Wiki Markup", "create Confluence page", "create Confluence blogpost", or "handle Confluence images".
 ---
 
 # Confluence Data Center Management Skill
@@ -23,6 +23,7 @@ Manage Confluence Data Center documentation through Claude Code: download pages 
 | Small text-only uploads (<10KB) | MCP tools | `confluence_createContent`, `confluence_updateContent` |
 | Large documents (>10KB) | `upload_confluence_v2.py` | REST API, no size limits |
 | Documents with images | `upload_confluence_v2.py` | Handles attachments automatically |
+| Create blogpost | `upload_confluence_v2.py --type blogpost` | Or MCP with `type: "blogpost"` |
 | Download pages to Markdown | `download_confluence.py` | Converts macros, downloads attachments |
 | Download page to Markdown (lightweight) | `download_long_page.py` | Stdlib + html2text only, no heavy deps |
 
@@ -32,11 +33,11 @@ MCP tools have size limits (10-20KB) for uploads. For large documents or pages w
 
 ```bash
 # Upload large document
-python3 ~/.claude/skills/confluence/scripts/upload_confluence_v2.py \
+python3 ~/.claude/skills/confluence-dc/scripts/upload_confluence_v2.py \
     document.md --id 780369923
 
 # Dry-run preview
-python3 ~/.claude/skills/confluence/scripts/upload_confluence_v2.py \
+python3 ~/.claude/skills/confluence-dc/scripts/upload_confluence_v2.py \
     document.md --id 780369923 --dry-run
 ```
 
@@ -59,26 +60,31 @@ MCP works for reading pages but not for uploading large content.
 
 ```bash
 # Single page
-python3 ~/.claude/skills/confluence/scripts/download_confluence.py 123456789
+python3 ~/.claude/skills/confluence-dc/scripts/download_confluence.py 123456789
 
 # With child pages
-python3 ~/.claude/skills/confluence/scripts/download_confluence.py --download-children 123456789
+python3 ~/.claude/skills/confluence-dc/scripts/download_confluence.py --download-children 123456789
 
 # Custom output directory
-python3 ~/.claude/skills/confluence/scripts/download_confluence.py --output-dir ./docs 123456789
+python3 ~/.claude/skills/confluence-dc/scripts/download_confluence.py --output-dir ./docs 123456789
 ```
 
 See [Downloading Guide](references/conversion_guide.md) for details.
 
-### Upload Pages with Images
+### Upload Pages/Blogposts with Images
 
 1. Convert diagrams to images first using `design-doc-mermaid` or `plantuml` skills
 2. Reference images with standard markdown: `![Description](./images/diagram.png)`
 3. Upload via REST API:
 
 ```bash
-python3 ~/.claude/skills/confluence/scripts/upload_confluence_v2.py \
+# Upload as page (default)
+python3 ~/.claude/skills/confluence-dc/scripts/upload_confluence_v2.py \
     document.md --id PAGE_ID
+
+# Upload as blogpost
+python3 ~/.claude/skills/confluence-dc/scripts/upload_confluence_v2.py \
+    document.md --space ARCP --type blogpost
 ```
 
 See [Image Handling Best Practices](references/image_handling_best_practices.md) for details.
@@ -92,7 +98,7 @@ confluence_searchContent({
 })
 ```
 
-### Create/Update Pages (Small Documents)
+### Create/Update Pages & Blogposts (Small Documents)
 
 Note: Content format for these tools is Confluence storage format (XML-based), not wiki markup.
 
@@ -103,6 +109,14 @@ confluence_createContent({
   title: "API Documentation",
   content: "<h1>Overview</h1><p>Content here...</p>",
   type: "page"
+})
+
+// Create blogpost
+confluence_createContent({
+  spaceKey: "DEV",
+  title: "Release Notes v2.0",
+  content: "<h1>What's New</h1><p>Content here...</p>",
+  type: "blogpost"
 })
 
 // Update page
@@ -166,12 +180,12 @@ Detailed guides in the `references/` directory:
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/upload_confluence_v2.py` | Upload large documents with images |
+| `scripts/upload_confluence_v2.py` | Upload large documents with images (supports `--type page\|blogpost`) |
+| `scripts/upload_confluence.py` | Upload with frontmatter support (supports `--type page\|blogpost`) |
 | `scripts/download_confluence.py` | Download pages to Markdown |
 | `scripts/convert_markdown_to_wiki.py` | Convert Markdown to Wiki Markup |
 | `scripts/render_mermaid.py` | Render Mermaid diagrams |
 | `scripts/download_long_page.py` | Lightweight single-page downloader (stdlib + html2text) |
-
 ---
 
-**Version**: 3.1.0 | **Last Updated**: 2026-03-01
+**Version**: 3.2.0 | **Last Updated**: 2026-03-02

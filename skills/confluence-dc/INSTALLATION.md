@@ -4,7 +4,7 @@
 
 The Confluence skill has been installed to:
 ```
-~/.claude/skills/confluence/
+~/.claude/skills/confluence-dc/
 ```
 
 ## 📁 What Was Installed
@@ -31,7 +31,7 @@ The Confluence skill has been installed to:
 ### 1. Verify Installation
 
 ```bash
-ls ~/.claude/skills/confluence/
+ls ~/.claude/skills/confluence-dc/
 ```
 
 You should see:
@@ -90,12 +90,12 @@ Claude will automatically:
 
 #### Convert Markdown to Wiki Markup
 ```bash
-python ~/.claude/skills/confluence/scripts/convert_markdown_to_wiki.py input.md output.wiki
+python ~/.claude/skills/confluence-dc/scripts/convert_markdown_to_wiki.py input.md output.wiki
 ```
 
 #### Render Mermaid Diagrams
 ```bash
-python ~/.claude/skills/confluence/scripts/render_mermaid.py diagram.mmd output.png
+python ~/.claude/skills/confluence-dc/scripts/render_mermaid.py diagram.mmd output.png
 ```
 
 ## ⚙️ Configuration
@@ -183,7 +183,7 @@ Claude:
 
 If Claude doesn't seem to recognize Confluence tasks:
 
-1. Verify skill is in `~/.claude/skills/confluence/`
+1. Verify skill is in `~/.claude/skills/confluence-dc/`
 2. Check that `SKILL.md` exists and is readable
 3. Try restarting Claude Code
 4. Explicitly mention "using the Confluence skill"
@@ -203,8 +203,8 @@ If Confluence DC MCP tools aren't working:
 If Python scripts fail:
 
 1. Ensure Python 3 is installed: `python3 --version`
-2. Check script permissions: `ls -l ~/.claude/skills/confluence/scripts/`
-3. Run directly: `python3 ~/.claude/skills/confluence/scripts/convert_markdown_to_wiki.py`
+2. Check script permissions: `ls -l ~/.claude/skills/confluence-dc/scripts/`
+3. Run directly: `python3 ~/.claude/skills/confluence-dc/scripts/convert_markdown_to_wiki.py`
 4. Check error messages for missing dependencies
 
 ## 🆘 Getting Help

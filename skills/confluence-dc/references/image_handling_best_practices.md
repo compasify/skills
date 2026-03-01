@@ -331,7 +331,7 @@ Here's a screenshot of the main dashboard:
 
 ```bash
 # Use upload_confluence_v2.py script
-python3 ~/.claude/skills/confluence/scripts/upload_confluence_v2.py \
+python3 ~/.claude/skills/confluence-dc/scripts/upload_confluence_v2.py \
     document.md \
     --id 780369923 \
     --env-file /path/to/.env.confluence

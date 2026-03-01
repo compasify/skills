@@ -20,6 +20,9 @@ Usage:
     # Create new page
     python3 upload_confluence_v2.py document.md --space ARCP --parent-id 123456
 
+    # Create new blogpost
+    python3 upload_confluence_v2.py document.md --space ARCP --type blogpost
+
     # Dry-run (preview without uploading)
     python3 upload_confluence_v2.py document.md --id 780369923 --dry-run
 
@@ -145,10 +148,11 @@ def upload_to_confluence(
     attachments: List[str],
     space_key: Optional[str] = None,
     parent_id: Optional[str] = None,
-    skip_existing_attachments: bool = True
+    skip_existing_attachments: bool = True,
+    content_type: str = 'page'
 ) -> Dict:
     """
-    Upload page content and attachments to Confluence via REST API.
+    Upload page/blogpost content and attachments to Confluence via REST API.
 
     Args:
         confluence: Confluence client instance
@@ -157,8 +161,9 @@ def upload_to_confluence(
         storage_html: Content in Confluence storage format
         attachments: List of file paths to upload as attachments
         space_key: Space key (required for creates)
-        parent_id: Optional parent page ID
+        parent_id: Optional parent page ID (not supported for blogposts)
         skip_existing_attachments: If True, skip uploading attachments that already exist
+        content_type: Content type ('page' or 'blogpost', default: 'page')
 
     Returns:
         Dict with 'id', 'title', 'version', 'url' keys
@@ -174,7 +179,7 @@ def upload_to_confluence(
 
         new_version = current_version + 1
 
-        print(f"📄 Updating page {page_id}")
+        print(f"📄 Updating {content_type} {page_id}")
         print(f"   Current version: {current_version}")
         print(f"   New version: {new_version}")
         print(f"   Storage content length: {len(storage_html)} characters")
@@ -187,7 +192,7 @@ def upload_to_confluence(
                 title=title,
                 body=storage_html,
                 parent_id=parent_id,
-                type='page',
+                type=content_type,
                 representation='storage',  # CRITICAL: Must be 'storage' format
                 minor_edit=False,
                 version_comment=f"Updated with images (v{current_version} → v{new_version})"
@@ -217,7 +222,7 @@ def upload_to_confluence(
         if not space_key:
             raise ValueError("space_key is required to create new page")
 
-        print(f"📄 Creating new page in space {space_key}")
+        print(f"📄 Creating new {content_type} in space {space_key}")
         print(f"   Storage content length: {len(storage_html)} characters")
         print(f"   Attachments to upload: {len(attachments)}")
 
@@ -227,17 +232,17 @@ def upload_to_confluence(
                 title=title,
                 body=storage_html,
                 parent_id=parent_id,
-                type='page',
+                type=content_type,
                 representation='storage'
             )
 
             new_page_id = result['id']
-            print(f"✅ Page created successfully")
+            print(f"✅ {content_type.capitalize()} created successfully")
             print(f"   Page ID: {new_page_id}")
             print(f"   Version: {result.get('version', {}).get('number', 'unknown')}")
 
         except Exception as e:
-            print(f"❌ ERROR creating page: {e}")
+            print(f"❌ ERROR creating {content_type}: {e}")
             raise
 
         # Upload attachments
@@ -367,6 +372,9 @@ Examples:
   # Create new page
   %(prog)s document.md --space ARCP --parent-id 123456
 
+  # Create new blogpost
+  %(prog)s document.md --space ARCP --type blogpost
+
   # Dry-run preview
   %(prog)s document.md --id 780369923 --dry-run
 
@@ -384,6 +392,8 @@ IMPORTANT:
     parser.add_argument('--space', type=str, help='Space key (required for new pages)')
     parser.add_argument('--title', type=str, help='Page title (overrides frontmatter/H1)')
     parser.add_argument('--parent-id', type=str, help='Parent page ID')
+    parser.add_argument('--type', type=str, choices=['page', 'blogpost'],
+                        default=None, help='Content type: page or blogpost (default: page)')
     parser.add_argument('--dry-run', action='store_true', help='Preview without uploading')
     parser.add_argument('--env-file', type=str, help='Path to .env file with credentials')
     parser.add_argument('--force-reupload', action='store_true',
@@ -409,6 +419,14 @@ IMPORTANT:
     page_id = args.id or frontmatter.get('confluence', {}).get('id')
     space_key = args.space or frontmatter.get('confluence', {}).get('space')
     parent_id = args.parent_id or frontmatter.get('parent', {}).get('id')
+
+    # Determine content type (CLI --type > frontmatter type > default 'page')
+    content_type = args.type or frontmatter.get('type', 'page')
+
+    # Warn about blogpost + parent_id incompatibility
+    if content_type == 'blogpost' and parent_id:
+        print('WARNING: parent_id is not supported for blogposts, ignoring parent_id', file=sys.stderr)
+        parent_id = None
 
     # Validate required parameters
     if not page_id and not space_key:
@@ -458,9 +476,9 @@ IMPORTANT:
             attachments=attachments,
             space_key=space_key,
             parent_id=parent_id,
+            content_type=content_type,
             skip_existing_attachments=not args.force_reupload
         )
-
         print("=" * 70)
         print("✅ UPLOAD COMPLETE!")
         print(f"   Title: {result['title']}")

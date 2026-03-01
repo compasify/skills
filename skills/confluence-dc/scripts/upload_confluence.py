@@ -16,6 +16,9 @@ Usage:
     # Create new page
     python3 upload_confluence.py page.md --space ARCP --parent-id 123456
 
+    # Create new blogpost
+    python3 upload_confluence.py page.md --space ARCP --type blogpost
+
     # Dry-run (preview without uploading)
     python3 upload_confluence.py page.md --dry-run
 
@@ -119,10 +122,11 @@ def upload_to_confluence(
     page_id: Optional[str] = None,
     parent_id: Optional[str] = None,
     version: Optional[int] = None,
-    attachments: Optional[List[Dict]] = None
+    attachments: Optional[List[Dict]] = None,
+    content_type: str = 'page'
 ) -> Dict:
     """
-    Upload or update page in Confluence.
+    Upload or update page/blogpost in Confluence.
 
     Args:
         confluence: Confluence client instance
@@ -130,9 +134,10 @@ def upload_to_confluence(
         content: Page content (storage format)
         space_key: Space key (required for create)
         page_id: Page ID (for updates)
-        parent_id: Parent page ID (optional)
+        parent_id: Parent page ID (optional, not supported for blogposts)
         version: Current version number (required for updates)
         attachments: List of attachment dicts with 'path', 'filename', 'type'
+        content_type: Content type ('page' or 'blogpost', default: 'page')
 
     Returns:
         Page metadata dict with 'id', 'title', 'url', 'version'
@@ -156,7 +161,7 @@ def upload_to_confluence(
                 title=title,
                 body=content,
                 parent_id=parent_id,
-                type='page',
+                type=content_type,
                 representation='storage',
                 minor_edit=False,
                 version_comment=f"Updated via upload_confluence.py (v{version} → v{new_version})"
@@ -194,7 +199,7 @@ def upload_to_confluence(
                 title=title,
                 body=content,
                 parent_id=parent_id,
-                type='page',
+                type=content_type,
                 representation='storage'
             )
 
@@ -219,7 +224,7 @@ def upload_to_confluence(
             }
 
         except Exception as e:
-            raise RuntimeError(f"Failed to create page '{title}' in space {space_key}: {e}")
+            raise RuntimeError(f"Failed to create {content_type} '{title}' in space {space_key}: {e}")
 
 
 def dry_run_preview(
@@ -229,7 +234,8 @@ def dry_run_preview(
     page_id: Optional[str],
     parent_id: Optional[str],
     version: Optional[int],
-    attachments: Optional[List[Dict]]
+    attachments: Optional[List[Dict]],
+    content_type: str = 'page'
 ) -> None:
     """Print preview of what would be uploaded"""
     print("=" * 70)
@@ -239,6 +245,7 @@ def dry_run_preview(
     mode = "UPDATE" if page_id else "CREATE"
     print(f"\nMode: {mode}")
     print(f"Title: {title}")
+    print(f"Type: {content_type}")
 
     if page_id:
         print(f"Page ID: {page_id}")
@@ -278,6 +285,9 @@ Examples:
   # Create new page
   %(prog)s page.md --space ARCP --parent-id 123456
 
+  # Create new blogpost
+  %(prog)s page.md --space ARCP --type blogpost
+
   # Dry-run preview
   %(prog)s page.md --dry-run
 
@@ -291,6 +301,8 @@ Examples:
     parser.add_argument('--space', type=str, help='Space key (required for new pages)')
     parser.add_argument('--title', type=str, help='Page title (overrides frontmatter/H1)')
     parser.add_argument('--parent-id', type=str, help='Parent page ID (specify parent to move page)')
+    parser.add_argument('--type', type=str, choices=['page', 'blogpost'],
+                        default=None, help='Content type: page or blogpost (default: page)')
     parser.add_argument('--ignore-frontmatter', action='store_true',
                         help='Ignore parent_id in frontmatter (update page in place without moving)')
     parser.add_argument('--dry-run', action='store_true', help='Preview without uploading')
@@ -329,6 +341,14 @@ Examples:
 
     version = frontmatter.get('confluence', {}).get('version')
 
+    # Determine content type (CLI --type > frontmatter type > default 'page')
+    content_type = args.type or frontmatter.get('type', 'page')
+
+    # Warn about blogpost + parent_id incompatibility
+    if content_type == 'blogpost' and parent_id:
+        print('WARNING: parent_id is not supported for blogposts, ignoring parent_id', file=sys.stderr)
+        parent_id = None
+
     # Validate required parameters
     if not page_id and not space_key:
         print("ERROR: Either --id (for update) or --space (for create) must be provided", file=sys.stderr)
@@ -345,7 +365,7 @@ Examples:
 
     # Dry-run mode
     if args.dry_run:
-        dry_run_preview(title, storage_content, space_key, page_id, parent_id, version, attachments)
+        dry_run_preview(title, storage_content, space_key, page_id, parent_id, version, attachments, content_type)
         return
 
     # Get Confluence client
@@ -365,9 +385,9 @@ Examples:
             page_id=page_id,
             parent_id=parent_id,
             version=version,
-            attachments=attachments
+            attachments=attachments,
+            content_type=content_type
         )
-
         print("✅ Upload successful!")
         print(f"  Title: {result['title']}")
         print(f"  ID: {result['id']}")
