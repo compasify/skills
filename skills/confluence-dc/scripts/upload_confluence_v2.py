@@ -140,6 +140,63 @@ def convert_markdown_to_storage(markdown_content: str) -> Tuple[str, List[str]]:
     return storage_html, attachments
 
 
+def _get_content_info_rest(confluence, content_id: str) -> Dict:
+    """Get content info (version, space, type) via REST API."""
+    resp = confluence._session.get(
+        f"{confluence.url}/rest/api/content/{content_id}?expand=version,space"
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def _update_content_rest(confluence, content_id: str, title: str, body: str, content_type: str) -> Dict:
+    """
+    Update content via direct REST API.
+    Needed because atlassian-python-api's update_page() doesn't handle blogpost updates correctly.
+    """
+    info = _get_content_info_rest(confluence, content_id)
+    current_version = info['version']['number']
+    new_version = current_version + 1
+    space_key = info.get('space', {}).get('key', '')
+
+    payload = {
+        'type': content_type,
+        'title': title,
+        'space': {'key': space_key},
+        'body': {'storage': {'value': body, 'representation': 'storage'}},
+        'version': {
+            'number': new_version,
+            'message': f'Updated via upload_confluence_v2.py (v{current_version} -> v{new_version})',
+        },
+    }
+
+    resp = confluence._session.put(
+        f"{confluence.url}/rest/api/content/{content_id}", json=payload
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def _create_content_rest(confluence, title: str, body: str, content_type: str, space_key: str, parent_id: Optional[str] = None) -> Dict:
+    """
+    Create content via direct REST API.
+    Needed because atlassian-python-api's create_page() may not handle blogpost creates correctly.
+    """
+    payload = {
+        'type': content_type,
+        'title': title,
+        'space': {'key': space_key},
+        'body': {'storage': {'value': body, 'representation': 'storage'}},
+    }
+    if parent_id:
+        payload['ancestors'] = [{'id': parent_id}]
+
+    resp = confluence._session.post(
+        f"{confluence.url}/rest/api/content", json=payload
+    )
+    resp.raise_for_status()
+    return resp.json()
+
 def upload_to_confluence(
     confluence,
     page_id: str,
@@ -170,80 +227,112 @@ def upload_to_confluence(
     """
     if page_id:
         # UPDATE MODE
-        # Get current page version
-        try:
-            page_info = confluence.get_page_by_id(page_id, expand='version')
-            current_version = page_info['version']['number']
-        except Exception as e:
-            raise ValueError(f"Failed to fetch current version for page {page_id}: {e}")
+        if content_type == 'blogpost':
+            # Use direct REST API — atlassian-python-api's update_page() doesn't handle blogposts well
+            try:
+                result = _update_content_rest(confluence, page_id, title, storage_html, content_type)
+                print(f"✅ {content_type.capitalize()} updated successfully")
+                print(f"   Version: {result.get('version', {}).get('number', 'unknown')}")
+            except Exception as e:
+                print(f"❌ ERROR updating {content_type}: {e}")
+                raise
 
-        new_version = current_version + 1
+            # Upload attachments
+            if attachments:
+                print(f"\n📎 Uploading {len(attachments)} attachments...")
+                _upload_attachments(confluence, page_id, attachments, skip_existing_attachments)
 
-        print(f"📄 Updating {content_type} {page_id}")
-        print(f"   Current version: {current_version}")
-        print(f"   New version: {new_version}")
-        print(f"   Storage content length: {len(storage_html)} characters")
-        print(f"   Attachments to upload: {len(attachments)}")
+            return {
+                'id': result['id'],
+                'title': result['title'],
+                'version': result.get('version', {}).get('number', 'unknown'),
+                'url': confluence.url + result['_links']['webui']
+            }
+        else:
+            # Use atlassian-python-api for regular pages
+            try:
+                page_info = confluence.get_page_by_id(page_id, expand='version')
+                current_version = page_info['version']['number']
+            except Exception as e:
+                raise ValueError(f"Failed to fetch current version for page {page_id}: {e}")
 
-        # Update page content
-        try:
-            result = confluence.update_page(
-                page_id=page_id,
-                title=title,
-                body=storage_html,
-                parent_id=parent_id,
-                type=content_type,
-                representation='storage',  # CRITICAL: Must be 'storage' format
-                minor_edit=False,
-                version_comment=f"Updated with images (v{current_version} → v{new_version})"
-            )
+            new_version = current_version + 1
 
-            print(f"✅ Page updated successfully")
-            print(f"   Version: {result.get('version', {}).get('number', 'unknown')}")
+            print(f"📄 Updating page {page_id}")
+            print(f"   Current version: {current_version}")
+            print(f"   New version: {new_version}")
+            print(f"   Storage content length: {len(storage_html)} characters")
+            print(f"   Attachments to upload: {len(attachments)}")
 
-        except Exception as e:
-            print(f"❌ ERROR updating page: {e}")
-            raise
+            try:
+                result = confluence.update_page(
+                    page_id=page_id,
+                    title=title,
+                    body=storage_html,
+                    parent_id=parent_id,
+                    type='page',
+                    representation='storage',
+                    minor_edit=False,
+                    version_comment=f"Updated with images (v{current_version} → v{new_version})"
+                )
 
-        # Upload attachments
-        if attachments:
-            print(f"\n📎 Uploading {len(attachments)} attachments...")
-            _upload_attachments(confluence, page_id, attachments, skip_existing_attachments)
+                print(f"✅ Page updated successfully")
+                print(f"   Version: {result.get('version', {}).get('number', 'unknown')}")
 
-        return {
-            'id': result['id'],
-            'title': result['title'],
-            'version': result.get('version', {}).get('number', 'unknown'),
-            'url': confluence.url + result['_links']['webui']
-        }
+            except Exception as e:
+                print(f"❌ ERROR updating page: {e}")
+                raise
+
+            # Upload attachments
+            if attachments:
+                print(f"\n📎 Uploading {len(attachments)} attachments...")
+                _upload_attachments(confluence, page_id, attachments, skip_existing_attachments)
+
+            return {
+                'id': result['id'],
+                'title': result['title'],
+                'version': result.get('version', {}).get('number', 'unknown'),
+                'url': confluence.url + result['_links']['webui']
+            }
 
     else:
         # CREATE MODE
         if not space_key:
-            raise ValueError("space_key is required to create new page")
+            raise ValueError("space_key is required to create new content")
 
         print(f"📄 Creating new {content_type} in space {space_key}")
         print(f"   Storage content length: {len(storage_html)} characters")
         print(f"   Attachments to upload: {len(attachments)}")
 
-        try:
-            result = confluence.create_page(
-                space=space_key,
-                title=title,
-                body=storage_html,
-                parent_id=parent_id,
-                type=content_type,
-                representation='storage'
-            )
-
-            new_page_id = result['id']
-            print(f"✅ {content_type.capitalize()} created successfully")
-            print(f"   Page ID: {new_page_id}")
-            print(f"   Version: {result.get('version', {}).get('number', 'unknown')}")
-
-        except Exception as e:
-            print(f"❌ ERROR creating {content_type}: {e}")
-            raise
+        if content_type == 'blogpost':
+            # Use direct REST API for blogpost creation
+            try:
+                result = _create_content_rest(confluence, title, storage_html, content_type, space_key, parent_id)
+                new_page_id = result['id']
+                print(f"✅ {content_type.capitalize()} created successfully")
+                print(f"   Page ID: {new_page_id}")
+                print(f"   Version: {result.get('version', {}).get('number', 'unknown')}")
+            except Exception as e:
+                print(f"❌ ERROR creating {content_type}: {e}")
+                raise
+        else:
+            # Use atlassian-python-api for regular pages
+            try:
+                result = confluence.create_page(
+                    space=space_key,
+                    title=title,
+                    body=storage_html,
+                    parent_id=parent_id,
+                    type='page',
+                    representation='storage'
+                )
+                new_page_id = result['id']
+                print(f"✅ Page created successfully")
+                print(f"   Page ID: {new_page_id}")
+                print(f"   Version: {result.get('version', {}).get('number', 'unknown')}")
+            except Exception as e:
+                print(f"❌ ERROR creating page: {e}")
+                raise
 
         # Upload attachments
         if attachments:
