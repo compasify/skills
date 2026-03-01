@@ -2,7 +2,7 @@
   "name": "compasify-skills",
   "owner": {
     "name": "Compasify",
-    "email": "hien.bt@htsc.vn"
+    "email": "buithehien1991@gmail.com"
   },
   "metadata": {
     "description": "Enterprise AI agent skills for Atlassian, DevOps, and productivity workflows",
@@ -23,6 +23,22 @@
       "category": "productivity",
       "skills": [
         "./skills/confluence-dc"
+      ]
+    },
+    {
+      "name": "md-long-content-writer",
+      "description": "Write large Markdown files (100+ lines) reliably with chunked appends and fallback scripts",
+      "source": "./",
+      "strict": false,
+      "version": "1.0.0",
+      "author": {
+        "name": "Compasify"
+      },
+      "license": "MIT",
+      "keywords": ["markdown", "writing", "long-content", "chunked-append"],
+      "category": "productivity",
+      "skills": [
+        "./skills/md-long-content-writer"
       ]
     }
   ]
