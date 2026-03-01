@@ -122,7 +122,7 @@ app.listen(3000);
 
 ```xml
 <!-- Internal page link -->
-<ac:link><ri:page ri:content-title="Page Title" ri:space-key="HTSC"/></ac:link>
+<ac:link><ri:page ri:content-title="Page Title" ri:space-key="EXAMPLE_SPACE"/></ac:link>
 
 <!-- Link with custom text -->
 <ac:link><ri:page ri:content-title="Page Title"/><ac:plain-text-link-body><![CDATA[Custom Link Text]]></ac:plain-text-link-body></ac:link>

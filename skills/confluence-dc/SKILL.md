@@ -24,6 +24,7 @@ Manage Confluence Data Center documentation through Claude Code: download pages 
 | Large documents (>10KB) | `upload_confluence_v2.py` | REST API, no size limits |
 | Documents with images | `upload_confluence_v2.py` | Handles attachments automatically |
 | Download pages to Markdown | `download_confluence.py` | Converts macros, downloads attachments |
+| Download page to Markdown (lightweight) | `download_long_page.py` | Stdlib + html2text only, no heavy deps |
 
 ## MCP Size Limits
 
@@ -169,7 +170,8 @@ Detailed guides in the `references/` directory:
 | `scripts/download_confluence.py` | Download pages to Markdown |
 | `scripts/convert_markdown_to_wiki.py` | Convert Markdown to Wiki Markup |
 | `scripts/render_mermaid.py` | Render Mermaid diagrams |
+| `scripts/download_long_page.py` | Lightweight single-page downloader (stdlib + html2text) |
 
 ---
 
-**Version**: 3.0.0 | **Last Updated**: 2026-02-28
+**Version**: 3.1.0 | **Last Updated**: 2026-03-01

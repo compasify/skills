@@ -19,6 +19,7 @@ Skills work with any AI coding assistant that supports the [Agent Skills](https:
 | Skill | Description |
 |-------|-------------|
 | [confluence-dc](./skills/confluence-dc/) | Manage Confluence Data Center pages/blogs with safety guards, MCP integration, and API fallback *(synced from [compasify/confluence-skill](https://github.com/compasify/confluence-skill))* |
+| [md-long-content-writer](./skills/md-long-content-writer/) | Write large Markdown files (100+ lines) reliably with chunked appends and fallback scripts |
 
 ## Cloning
 

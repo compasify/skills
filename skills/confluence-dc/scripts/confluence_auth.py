@@ -84,6 +84,8 @@ def _get_mcp_config_paths() -> list:
         # Claude Desktop
         appdata / "Claude" / "claude_desktop_config.json",
         # Claude Code (claude.ai/code)
+        # Claude Code (claude.ai/code) — dot-prefixed config
+        home / ".claude" / ".mcp.json",
         home / ".claude" / "mcp.json",
         home / ".claude.json",
         # Cursor

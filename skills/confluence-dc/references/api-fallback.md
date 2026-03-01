@@ -50,7 +50,7 @@ Use `scripts/confluence_api.py` for standard page updates.
 **Create New Page:**
 ```bash
 python scripts/confluence_api.py create \
-  --space HTSC \
+  --space EXAMPLE_SPACE \
   --title "My Large Page" \
   --file output.html \
   --base-url https://confluence.example.com
