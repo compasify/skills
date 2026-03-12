@@ -18,10 +18,9 @@ Does NOT handle: Markdown formatting/linting, publishing, or content generation.
 |-------------|----------|------|
 | < 50 lines | Direct write | `write` or `edit` tool |
 | 50-150 lines | Single append | `edit` tool (append op) |
-| 150-500 lines | Chunked append | `edit` tool (3-5 chunks of ~100 lines) |
-| 500+ lines | Script-assisted | `scripts/write_markdown.py` via bash |
+| 150+ lines | **Progressive chunked append** | `edit` tool (chunked, auto-reduce on failure) |
 
-## Core Workflow: Chunked Append (DEFAULT)
+## Core Workflow: Progressive Chunked Append (DEFAULT)
 
 For any content > 50 lines, follow this workflow:
 
@@ -29,36 +28,57 @@ For any content > 50 lines, follow this workflow:
 2. **Create file** with header/frontmatter using `edit` (append, no anchor = create new file).
 3. **Append in chunks** of ~80-100 lines per `edit` call (append op with anchor to last line).
 4. **Re-read tail** after each chunk: `read` with offset to get fresh line hashes for next anchor.
-5. **Verify** final file: `read` first 20 + last 20 lines to confirm structure.
+5. **If a chunk write FAILS** → **halve the chunk size** and retry (see Progressive Retry below).
+6. **Verify** final file: `read` first 20 + last 20 lines to confirm structure.
+
+### Progressive Retry Strategy (MANDATORY on failure)
+
+When ANY write/append fails, follow this escalation **before falling back to scripts**:
+
+```
+Attempt 1: ~80-100 lines per chunk  → FAILED
+Attempt 2: ~40-50 lines per chunk   → FAILED
+Attempt 3: ~20-25 lines per chunk   → FAILED
+Attempt 4: ~10 lines per chunk      → FAILED
+→ ONLY NOW: fall back to script (Level 3)
+```
+
+**Rules for progressive retry:**
+- On failure, **split the failing chunk in half** and retry each half separately.
+- Keep halving until chunk size reaches ~10 lines. If 10-line chunks still fail → escalate to script.
+- **Do NOT jump to script on first failure.** Always try smaller chunks first.
+- After each successful chunk write, **re-read the file tail** to get fresh anchors.
+- Chunk boundaries should fall at section breaks (`## headings`), not mid-paragraph. If halving lands mid-paragraph, adjust to nearest paragraph break.
 
 ### Critical Rules
 
 - **NEVER** attempt writing 200+ lines in a single tool call — it WILL fail.
 - **ALWAYS** re-read file after each append to get updated line hashes.
 - **ALWAYS** use UTF-8. Avoid bash heredocs (`cat << 'EOF'`) for non-ASCII content — they corrupt Unicode on Windows.
-- **Chunk boundaries** should fall at section breaks (## headings), not mid-paragraph.
+- **ALWAYS** try progressively smaller chunks before falling back to scripts.
+- **Chunk boundaries** should fall at section breaks (## headings) or paragraph breaks, not mid-sentence.
 
 ## Fallback Chain
 
-When the primary tool fails, escalate:
+When progressive chunking is exhausted, escalate:
 
-### Level 1: `edit` tool (append op) — DEFAULT
+### Level 1: `edit` tool (progressive chunked append) — DEFAULT
 ```
 edit(filePath, edits=[{op: "append", pos: "LAST_LINE_HASH", lines: [...]}])
 ```
-Best reliability. Works with Unicode. Chunking required for large content.
+Best reliability. Works with Unicode. On failure → halve chunk size → retry → repeat until ~10 lines. Only escalate after progressive retry is exhausted.
 
 ### Level 2: `write` tool — FALLBACK 1
 ```
 write(filePath, content)
 ```
-If `edit` fails (e.g., hash mismatch after many edits), read full file, concatenate new content, write entire file. Risk: may fail on very large content with JSON parse errors.
+If `edit` progressive chunking fails entirely (e.g., persistent hash mismatch), read full file, concatenate new content, write entire file. If `write` also fails on large content → apply same progressive strategy: split content into 2 halves, write first half, then append second half. Keep halving on failure.
 
-### Level 3: Python script — FALLBACK 2
+### Level 3: Python script — FALLBACK 2 (LAST RESORT)
 ```bash
 python scripts/write_markdown.py <filepath> --content-file <temp_file>
 ```
-Most reliable for very large files. Write content to a temp `.txt` file first, then call script to merge. See `scripts/write_markdown.py` for usage.
+**Only use after Level 1 AND Level 2 progressive strategies are exhausted.** Write content to a temp `.txt` file first, then call script to merge. See `scripts/write_markdown.py` for usage.
 
 ### Level 3b: Inline Python — EMERGENCY FALLBACK
 ```bash
@@ -80,11 +100,12 @@ See `references/script-usage.md` for full documentation.
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| JSON parse error on `write` | Content too large or special chars | Switch to `edit` chunks or script |
-| Hash mismatch on `edit` | Stale line references | Re-read file, get fresh hashes |
+| JSON parse error on `write` | Content too large or special chars | **Halve chunk size**, retry. Then script. |
+| Hash mismatch on `edit` | Stale line references | Re-read file, get fresh hashes, retry same chunk |
 | Unicode corruption | Bash heredoc on Windows | Use `edit` tool or Python script |
-| Tool timeout | Single call too large | Reduce chunk size to 50 lines |
+| Tool timeout | Single call too large | **Halve chunk size** (e.g. 100→50→25), retry |
 | File encoding error | BOM or mixed encodings | Script with `encoding='utf-8'` |
+| Any write failure | Unknown | **Always try smaller chunks first** before script fallback |
 
 ## Security
 
