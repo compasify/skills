@@ -33,20 +33,20 @@ For any content > 50 lines, follow this workflow:
 
 ### Progressive Retry Strategy (MANDATORY on failure)
 
-When ANY write/append fails, follow this escalation **before falling back to scripts**:
+When ANY write/append fails, follow this escalation **before falling back to copy-paste or scripts**:
 
 ```
 Attempt 1: ~80-100 lines per chunk  → FAILED
 Attempt 2: ~40-50 lines per chunk   → FAILED
 Attempt 3: ~20-25 lines per chunk   → FAILED
 Attempt 4: ~10 lines per chunk      → FAILED
-→ ONLY NOW: fall back to script (Level 3)
+→ Fall back to copy-paste (Level 3), then script (Level 4)
 ```
 
 **Rules for progressive retry:**
 - On failure, **split the failing chunk in half** and retry each half separately.
-- Keep halving until chunk size reaches ~10 lines. If 10-line chunks still fail → escalate to script.
-- **Do NOT jump to script on first failure.** Always try smaller chunks first.
+- Keep halving until chunk size reaches ~10 lines. If 10-line chunks still fail → escalate to copy-paste, then script.
+- **Do NOT jump to copy-paste or script on first failure.** Always try smaller chunks first.
 - After each successful chunk write, **re-read the file tail** to get fresh anchors.
 - Chunk boundaries should fall at section breaks (`## headings`), not mid-paragraph. If halving lands mid-paragraph, adjust to nearest paragraph break.
 
@@ -74,17 +74,21 @@ write(filePath, content)
 ```
 If `edit` progressive chunking fails entirely (e.g., persistent hash mismatch), read full file, concatenate new content, write entire file. If `write` also fails on large content → apply same progressive strategy: split content into 2 halves, write first half, then append second half. Keep halving on failure.
 
-### Level 3: Python script — FALLBACK 2 (LAST RESORT)
+### Level 3: Copy-paste — FALLBACK 2
+
+If the `long-md-writer-copy` skill is installed, use the copy-paste approach:
+
+1. Create an empty file at the target path using `write(filePath, "")`
+2. Print the full content inside a ` ```txt ``` ` code block
+3. Instruct the user to copy-paste the content into the file
+
+**Preferred over scripts** — no Python dependency, works in any environment. See `long-md-writer-copy` skill for full workflow.
+
+### Level 4: Python script — FALLBACK 3 (LAST RESORT)
 ```bash
 python scripts/write_markdown.py <filepath> --content-file <temp_file>
 ```
-**Only use after Level 1 AND Level 2 progressive strategies are exhausted.** Write content to a temp `.txt` file first, then call script to merge. See `scripts/write_markdown.py` for usage.
-
-### Level 3b: Inline Python — EMERGENCY FALLBACK
-```bash
-python -c "from pathlib import Path; Path('file.md').write_text('''content''', encoding='utf-8')"
-```
-For small emergency appends. Use triple-quoted Python strings (handles Unicode safely). Not suitable for content with triple quotes.
+**Only use after Level 1, 2 AND 3 are exhausted.** Write content to a temp `.txt` file first, then call script to merge. See `scripts/write_markdown.py` for usage.
 
 ## Script Reference
 
@@ -100,12 +104,12 @@ See `references/script-usage.md` for full documentation.
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| JSON parse error on `write` | Content too large or special chars | **Halve chunk size**, retry. Then script. |
+| JSON parse error on `write` | Content too large or special chars | **Halve chunk size**, retry. Then copy-paste. Then script. |
 | Hash mismatch on `edit` | Stale line references | Re-read file, get fresh hashes, retry same chunk |
 | Unicode corruption | Bash heredoc on Windows | Use `edit` tool or Python script |
 | Tool timeout | Single call too large | **Halve chunk size** (e.g. 100→50→25), retry |
 | File encoding error | BOM or mixed encodings | Script with `encoding='utf-8'` |
-| Any write failure | Unknown | **Always try smaller chunks first** before script fallback |
+| Any write failure | Unknown | **Always try smaller chunks first**, then copy-paste, then script |
 
 ## Security
 
